@@ -22,7 +22,7 @@ public class Main {
         ConsoleUIHelper.showMenu();
 
         if (!scanner.hasNextInt()) {
-          System.out.println("Entrada inválida. Digite um número de 0 a 7");
+          ConsoleUIHelper.showErrorMessage("Entrada inválida. Digite um número de 0 a 7");
           scanner.next();
           continue;
         }
@@ -30,10 +30,9 @@ public class Main {
         scanner.nextLine();
 
         if (option == 0) {
-          System.out.println("Salvando histórico completo...");
+          System.out.println("\n▷ Salvando histórico completo...");
           jsonFileWriter.saveHistoryToFile(history.getAll());
-          System.out.println("Histórico salvo em 'history.json'");
-          System.out.println("Saindo...");
+          ConsoleUIHelper.showExitMessage();
           break;
         }
 
@@ -70,26 +69,35 @@ public class Main {
             continue;
           }
           default -> {
-            System.out.println("Opção inválida.");
+            ConsoleUIHelper.showErrorMessage("Opção inválida.");
             continue;
           }
         }
 
-        System.out.println("Digite o valor a ser convertido");
+        ConsoleUIHelper.requestAmount();
+
+        if (!scanner.hasNextDouble()) {
+          ConsoleUIHelper.showErrorMessage("Por favor, digite um valor numérico válido");
+          scanner.next();
+          continue;
+        }
+
         double amount = scanner.nextDouble();
 
-        ExchangeRateAPIResponse response = exchangeRateService.getConversionRate(base, target);
-        double rate = response.conversion_rate();
-        double convertedAmount = converter.convert(amount, rate);
+        try {
+          System.out.println("\n▷ Consultando taxas de conversão...");
+          ExchangeRateAPIResponse response = exchangeRateService.getConversionRate(base, target);
+          double rate = response.conversion_rate();
+          double convertedAmount = converter.convert(amount, rate);
 
-        System.out.printf("Valor convertido de %s para %s: %.2f%n", base, target, convertedAmount);
-        history.add(response);
+          ConsoleUIHelper.showConversionResult(base, target, amount, convertedAmount);
+          history.add(response);
+        } catch (IOException | InterruptedException e) {
+          ConsoleUIHelper.showErrorMessage("Erro de comunicação com a API: " + e.getMessage());
+        }
       }
-    } catch (IOException | InterruptedException e) {
-      System.out.println("Erro de comunicação com a API: " + e.getMessage());
     } catch (Exception e) {
-      System.out.println("Erro inesperado: " + e.getMessage());
+      ConsoleUIHelper.showErrorMessage("Erro inesperado: " + e.getMessage());
     }
   }
 }
-
